@@ -25,6 +25,7 @@ import type { PreferencesAccess } from 'compass-preferences-model';
 import { SecretStore } from './secret-store';
 import { OidcPluginLogger } from './oidc-plugin-logger';
 import { spawn } from 'child_process';
+import shellQuote from 'shell-quote';
 import { getAtlasConfig } from './util';
 import { createIpcTrack } from '@mongodb-js/compass-telemetry';
 import type { RequestInit, Response } from '@mongodb-js/devtools-proxy-support';
@@ -114,7 +115,8 @@ export class CompassAuthService {
       // `browserCommandForOIDCAuth` preference (which will cause loosing
       // internal plugin auth state), we copy oidc-plugin `openBrowser.command`
       // option handling to our openExternal method
-      const child = spawn(browserCommandForOIDCAuth, [url], {
+      const safeUrl = shellQuote.quote([url]);
+      const child = spawn(browserCommandForOIDCAuth, [safeUrl], {
         shell: true,
         stdio: 'ignore',
         detached: true,
