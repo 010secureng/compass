@@ -390,8 +390,32 @@ function renderDocumentCode(
 }
 
 /**
+ * Escapes unsafe characters for safe JavaScript code generation, after stringification.
+ * This helps prevent script injection through object keys.
+ */
+const charMap: { [key: string]: string } = {
+  '<': '\\u003C',
+  '>': '\\u003E',
+  '/': '\\u002F',
+  '\\': '\\\\',
+  '\b': '\\b',
+  '\f': '\\f',
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+  '\0': '\\0',
+  '\u2028': '\\u2028',
+  '\u2029': '\\u2029'
+};
+
+function escapeUnsafeChars(str: string): string {
+  return str.replace(/[<>\b\f\n\r\t\0\u2028\u2029\\/]/g, (x) => charMap[x] || x);
+}
+
+/**
  * Formats a field name for use in JavaScript object literal syntax.
- * Only quotes field names that need it, using JSON.stringify for proper escaping.
+ * Only quotes field names that need it, using JSON.stringify for proper escaping
+ * and escaping unsafe characters for safe injection.
  */
 function formatFieldName(fieldName: string): string {
   // If it's a valid JavaScript identifier, don't quote it
@@ -400,8 +424,8 @@ function formatFieldName(fieldName: string): string {
   if (isValidIdentifier) {
     return fieldName;
   } else {
-    // Use JSON.stringify for proper escaping of special characters
-    return JSON.stringify(fieldName);
+    // Use JSON.stringify for proper escaping, then escape unsafe characters
+    return escapeUnsafeChars(JSON.stringify(fieldName));
   }
 }
 
