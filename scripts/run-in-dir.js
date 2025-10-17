@@ -1,11 +1,11 @@
 'use strict';
 const { promisify } = require('util');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 
 const ONE_HOUR = 1000 * 60 * 60;
 
-async function runInDir(command, cwd = process.cwd(), timeout = ONE_HOUR) {
-  const execPromise = promisify(exec)(command, {
+async function runInDir(command, args = [], cwd = process.cwd(), timeout = ONE_HOUR) {
+  const execPromise = promisify(execFile)(command, args, {
     stdio: 'pipe',
     cwd,
     timeout,
