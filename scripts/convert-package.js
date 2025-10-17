@@ -4,6 +4,7 @@ const path = require('path');
 const os = require('os');
 const util = require('util');
 const exec = util.promisify(require('child_process').exec);
+const execFile = util.promisify(require('child_process').execFile);
 const { createWorkspace } = require('./create-workspace');
 const { collectWorkspacesMeta } = require('./workspace-dependencies');
 const { runInDir } = require('./run-in-dir');
@@ -15,7 +16,7 @@ async function convertWorkspace(srcPath) {
 
   // Move the folder to a tmp location
   const tmpPath = path.join(os.tmpdir(), `${name.replace('/', '__')}-tmp`);
-  await exec(`mv ${srcPath} ${tmpPath}`);
+  await execFile('mv', [srcPath, tmpPath]);
 
   console.log('install');
   await runInDir('npm install');
@@ -39,30 +40,24 @@ async function convertWorkspace(srcPath) {
   });
 
   // Copy the src and test or tests directories to the new workspace
-  await exec(`cp ${path.join(tmpPath, 'index.js')} ${newPath}`).catch(
-    console.log
-  );
-  await exec(`cp ${path.join(tmpPath, 'README.md')} ${newPath}`).catch(
-    console.log
-  );
-  await exec(`cp -r ${path.join(tmpPath, 'src')} ${newPath}`).catch(
-    console.log
-  );
-  await exec(`cp -r ${path.join(tmpPath, 'lib')} ${newPath}`).catch(
-    console.log
-  );
-  await exec(`cp -r ${path.join(tmpPath, 'bin')} ${newPath}`).catch(
-    console.log
-  );
-  await exec(
-    `cp -r ${path.join(tmpPath, 'test')} ${newPath} || cp -r ${path.join(
-      tmpPath,
-      'tests'
-    )} ${newPath}`
-  ).catch(console.log);
+  await execFile('cp', [path.join(tmpPath, 'index.js'), newPath]).catch(console.log);
+  await execFile('cp', [path.join(tmpPath, 'README.md'), newPath]).catch(console.log);
+  await execFile('cp', ['-r', path.join(tmpPath, 'src'), newPath]).catch(console.log);
+  await execFile('cp', ['-r', path.join(tmpPath, 'lib'), newPath]).catch(console.log);
+  await execFile('cp', ['-r', path.join(tmpPath, 'bin'), newPath]).catch(console.log);
+  // Try to copy the 'test' directory; if it fails, try 'tests'
+  try {
+    await execFile('cp', ['-r', path.join(tmpPath, 'test'), newPath]);
+  } catch (e) {
+    try {
+      await execFile('cp', ['-r', path.join(tmpPath, 'tests'), newPath]);
+    } catch (e2) {
+      console.log(e2);
+    }
+  }
 
   // Delete the tmp folder
-  await exec(`rm -rf ${tmpPath}`);
+  await execFile('rm', ['-rf', tmpPath]);
 
   await runInDir('npm install');
 }
